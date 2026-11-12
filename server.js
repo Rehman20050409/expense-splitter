@@ -123,14 +123,12 @@ async function createApp(dbConfig) {
     return { id: user.id, name: user.name };
   }
 
-  // Slows down password guessing: a few wrong tries per address and email, then a wait.
+  // Slows down password guessing: a few wrong tries for an email, then a wait.
+  // Counted per email only. The visitor's address would be read from X-Forwarded-For, a header
+  // the visitor can write themselves, so keying on it let an attacker reset the count at will.
+  // The price: someone who knows your email can lock you out for 15 minutes at a time.
   // shortcut: counts live in memory, so they reset on restart and aren't shared between servers; move to the database if this runs on more than one machine
   const failedLogins = new Map();
-  function loginKey(req, email) {
-    // behind the host's proxy the real address is in X-Forwarded-For; don't trust that header anywhere else
-    const ip = PRODUCTION ? String(req.headers['x-forwarded-for'] || '').split(',')[0].trim() : req.socket.remoteAddress;
-    return `${ip}|${email}`;
-  }
   function checkLoginAllowed(key) {
     const entry = failedLogins.get(key);
     if (entry && entry.resetAt <= now()) failedLogins.delete(key);
@@ -179,9 +177,9 @@ async function createApp(dbConfig) {
       await startSession(res, Number(lastInsertRowid));
     }],
 
-    ['POST', /^\/api\/login$/, async ({ req, res, body }) => {
+    ['POST', /^\/api\/login$/, async ({ res, body }) => {
       const email = String(body.email || '').trim().toLowerCase();
-      const key = loginKey(req, email);
+      const key = email;
       checkLoginAllowed(key);
       const user = await get('SELECT id, password FROM users WHERE email = ?', email);
       if (!user || typeof body.password !== 'string' || !passwordMatches(body.password, user.password)) {

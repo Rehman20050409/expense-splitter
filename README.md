@@ -56,7 +56,7 @@ The tables are created on first start. With `NODE_ENV=production` the server ref
 
 - Passwords are hashed with scrypt and a per-user salt, and compared in constant time.
 - The session cookie is `HttpOnly` and `SameSite=Strict`, and `Secure` in production. The database stores only a hash of the session token.
-- Logins are rate limited: ten wrong tries for an email from one address, then a 15 minute wait.
+- Logins are rate limited: ten wrong tries for an email, then a 15 minute wait.
 - Every group route checks that you are a member. Non-members get a 404, so group ids can't be probed.
 - All SQL uses bound parameters, and the front end only ever inserts user text as text, never as HTML.
 
