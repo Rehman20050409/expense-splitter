@@ -1,0 +1,13 @@
+{
+  "name": "expense-splitter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Share costs with flatmates and see who owes who.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}
