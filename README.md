@@ -2,17 +2,34 @@
 
 A full-stack web app for splitting costs. Create a group, invite your flatmates with a code, add what you paid for, and it works out who owes who in the fewest payments.
 
-Built with Node.js and SQLite using **only the standard library**: no frameworks and no `npm install`.
+Built with Node.js and SQLite and **no web framework**: the server is Node's standard library, and the only dependency is the database client.
 
 ## Run it
 
-Needs Node 22.13 or newer.
+Needs Node 20 or newer.
 
 ```
+npm install
 npm start
 ```
 
 Then open http://localhost:3000. Data is saved in `data.db` next to the server.
+
+## Deploy it
+
+A free host's disk is wiped on every restart, so in production the same code talks to a hosted SQLite database ([Turso](https://turso.tech)) and nothing else changes.
+
+1. Create a Turso database and copy its URL (`libsql://…`) and an auth token.
+2. Create a Node web service on a host such as [Render](https://render.com) from this repo, with build command `npm install` and start command `npm start`.
+3. Set three environment variables on the host:
+
+| Variable | Value |
+| --- | --- |
+| `NODE_ENV` | `production` |
+| `TURSO_DATABASE_URL` | the `libsql://…` URL |
+| `TURSO_AUTH_TOKEN` | the token |
+
+The tables are created on first start. With `NODE_ENV=production` the server refuses to start without a database URL, so it can never quietly fall back to a disk that gets wiped.
 
 ## Features
 
@@ -38,11 +55,12 @@ Then open http://localhost:3000. Data is saved in `data.db` next to the server.
 **Security**
 
 - Passwords are hashed with scrypt and a per-user salt, and compared in constant time.
-- The session cookie is `HttpOnly` and `SameSite=Strict`. The database stores only a hash of the session token.
+- The session cookie is `HttpOnly` and `SameSite=Strict`, and `Secure` in production. The database stores only a hash of the session token.
+- Logins are rate limited: ten wrong tries for an email from one address, then a 15 minute wait.
 - Every group route checks that you are a member. Non-members get a 404, so group ids can't be probed.
 - All SQL uses bound parameters, and the front end only ever inserts user text as text, never as HTML.
 
-Known limits, marked with `shortcut:` comments in the code: no login rate limiting, and the cookie has no `Secure` flag because it runs on plain `http://localhost`. Both need fixing before putting it on the public internet.
+Known limits, marked with `shortcut:` comments in the code: the login counter lives in memory, so it resets on restart, and password hashing briefly blocks the server. Both are fine for one small server and would need changing at scale.
 
 ## Tests
 

@@ -32,7 +32,7 @@ test('settle clears every balance in at most n-1 transfers', () => {
 });
 
 test('API: accounts, groups, expenses and paying back', async (t) => {
-  const server = createApp(':memory:');
+  const server = await createApp({ url: ':memory:' });
   await new Promise((resolve) => server.listen(0, resolve));
   t.after(() => { server.closeAllConnections(); server.close(); });
   const base = `http://127.0.0.1:${server.address().port}`;
@@ -83,4 +83,15 @@ test('API: accounts, groups, expenses and paying back', async (t) => {
   assert.equal((await bob('GET', '/api/me')).status, 401);
   assert.equal((await bob('POST', '/api/login', { email: 'BOB@example.com', password: 'correct horse' })).status, 200);
   assert.equal((await bob('GET', '/api/me')).data.groups.length, 1);
+
+  // deleting your own expense removes it and its shares, so balances go back
+  await alice('DELETE', `/api/expenses/${state.expenses.at(-1).id}`);
+  state = (await alice('GET', `/api/groups/${groupId}`)).data;
+  assert.equal(state.expenses.length, 1);
+  assert.deepEqual(state.balances, [{ userId: aliceId, amount: -500 }, { userId: bobId, amount: 500 }]);
+
+  // password guessing is cut off: 10 wrong tries, then even the right password has to wait
+  const guess = (password) => nobody('POST', '/api/login', { email: 'carol@example.com', password });
+  for (let i = 0; i < 10; i++) assert.equal((await guess('wrong password')).status, 401);
+  assert.equal((await guess('correct horse')).status, 429);
 });
