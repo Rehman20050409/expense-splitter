@@ -16,6 +16,7 @@ const LOGIN_WINDOW_SECONDS = 15 * 60;
 const STATIC = {
   '/': ['index.html', 'text/html'],
   '/app.js': ['app.js', 'text/javascript'],
+  '/logo.svg': ['logo.svg', 'image/svg+xml'],
 };
 
 const SCHEMA = `

@@ -50,7 +50,7 @@ async function act(fn) {
 
 function authView() {
   return [
-    h('h1', {}, 'Split'),
+    h('h1', {}, h('img', { src: '/logo.svg', alt: '', width: 36, height: 36 }), 'Split'),
     h('p', {}, 'Share costs with your flatmates and see who owes who.'),
     form({}, (data) => api('POST', registering ? '/api/register' : '/api/login', data),
       registering ? field('Name', { name: 'name', autocomplete: 'name', maxlength: 60 }) : null,
